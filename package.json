@@ -1,0 +1,43 @@
+{
+  "name": "hackforge-final",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "node scripts/ensure-prisma-client.cjs && tsx src/server.ts",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "node scripts/ensure-prisma-client.cjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.3.0",
+    "@types/node": "^26.6.5",
+    "prisma": "^6.19.3",
+    "ts-node-dev": "^2.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@google/genai": "^2.30.0",
+    "@prisma/client": "^6.19.3",
+    "dotenv": "^18.0.8",
+    "embedded-postgres": "^18.4.0-beta.17",
+    "express": "^5.3.0",
+    "multer": "^2.4.0"
+  },
+  "allowScripts": {
+    "@google/genai@2.30.0": true,
+    "prisma@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "protobufjs": true,
+    "@embedded-postgres/windows-x64@18.4.0-beta.17": true,
+    "@prisma/client@6.19.3": true
+  }
+}

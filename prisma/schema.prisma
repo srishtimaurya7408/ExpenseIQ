@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Claim {
+  id            Int      @id @default(autoincrement())
+  employeeId    String
+  merchant      String
+  amountPaise   Int
+  category      String
+  expenseDate   DateTime
+  purpose       String?
+  clientName    String?
+  attendees     String?
+  tripReference String?
+  tripDate      DateTime?
+  receiptHash   String?
+  perceptualHash String?
+  transactionReference String?
+  lostReceiptDeclaration String?
+  evidenceId String?
+  evidenceName String?
+  evidenceMimeType String?
+  lineItemsJson String?
+  taxPaise      Int      @default(0)
+  tipPaise      Int      @default(0)
+  discountPaise Int      @default(0)
+  originalAmountPaise Int?
+  originalCurrency String @default("INR")
+  exchangeRate  Float?
+  exchangeRateDate String?
+  reimbursedAt  DateTime?
+  receiptAssessment String?
+  receiptSignalsJson String?
+  extractedReceiptJson String?
+  status        String   @default("NEEDS_REVIEW")
+  eligiblePaise Int?
+  warning       String?
+  createdAt     DateTime @default(now())
+}
+
+model ReceiptAnalysis {
+  receiptHash             String   @id
+  merchant                String
+  amountPaise             Int
+  currency                String
+  expenseDate             DateTime?
+  category                String
+  extractedJson           String
+  visualAssessment        String
+  visualSignalsJson       String
+  arithmeticAssessment    String
+  createdAt               DateTime @default(now())
+}

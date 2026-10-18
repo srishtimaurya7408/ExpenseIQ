@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101b2d">
+  <title>ExpenseIQ | Expense review</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #f4f2ed;
+      background: #0b0c0e;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --ink: #f4f2ed;
+      --muted: #9b9ca5;
+      --line: #303136;
+      --blue: #c5f36a;
+      --navy: #0b0c0e;
+    }
+
+    * { box-sizing: border-box; }
+    html { overflow-x: clip; }
+    body { margin: 0; min-width: 320px; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: wait; opacity: .62; }
+    .topbar { background: var(--navy); color: white; }
+    .topbar-inner, main { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+    .topbar-inner { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; background: #4263eb; font-weight: 800; }
+    .brand h1 { margin: 0; font-size: 19px; letter-spacing: -.03em; }
+    .brand p { margin: 3px 0 0; color: #b7c3d7; font-size: 12px; }
+    .system-state { display: inline-flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1px solid #39465a; border-radius: 999px; color: #d8e1ef; font-size: 12px; white-space: nowrap; }
+    .state-dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
+    .system-state[data-state="ready"] .state-dot { background: #45d483; }
+    .system-state[data-state="attention"] .state-dot { background: #f8bd4f; }
+    .role-nav { display: flex; gap: 7px; margin-left: auto; }
+    .role-nav .button { min-height: 34px; padding: 0 10px; font-size: 11px; }
+    .role-nav .button.secondary { border-color: #39465a; background: transparent; color: #e0e8f4; }
+    .role-picker { width: min(900px, calc(100% - 40px)); margin: 72px auto; }
+    .role-picker h2 { margin: 0; font-size: clamp(29px, 5vw, 43px); letter-spacing: -.05em; }
+    .role-picker-copy { max-width: 600px; margin: 12px 0 26px; color: var(--muted); line-height: 1.6; }
+    .role-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .role-card { display: flex; min-height: 210px; flex-direction: column; align-items: flex-start; padding: 25px; border: 1px solid var(--line); border-radius: 16px; background: white; box-shadow: 0 4px 16px #17203308; }
+    .role-card-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 13px; background: #e9efff; color: var(--blue); font-size: 20px; font-weight: 800; }
+    .role-card h3 { margin: 17px 0 0; font-size: 19px; }
+    .role-card p { margin: 8px 0 20px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .role-card .button { margin-top: auto; }
+    .role-warning { margin-top: 20px; padding: 12px 14px; border: 1px solid #efdaa7; border-radius: 10px; background: #fff9e9; color: #71561d; font-size: 11px; line-height: 1.5; }
+    .employee-claims { margin-top: 20px; }
+    .employee-claims-list { display: grid; gap: 10px; margin-top: 16px; }
+    .employee-claim { display: grid; grid-template-columns: 1fr auto; gap: 5px 16px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; }
+    .employee-claim strong { font-size: 13px; }
+    .employee-claim p { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .status-pill.reimbursed { background: #e9f8ef; color: #267442; }
+    .status-pill.awaiting-reimbursement { background: #eef2f7; color: #59667b; }
+    .company-dashboard { margin-top: 20px; }
+    .advanced-field { display: none; }
+    .receipt-scanned .ocr-field { display: block; }
+    .ocr-confidence-note { margin: 10px 0 0; padding: 9px 11px; border: 1px solid #ffffff20; border-radius: 9px; background: #c5f36a0c; color: #c7cfb7; font-size: 11px; line-height: 1.5; }
+    .field-confidence { flex: 0 0 auto; padding: 3px 7px; border: 1px solid #ffffff24; border-radius: 999px; color: #c6c6cd; font-size: 9px; font-weight: 750; letter-spacing: .02em; }
+    .field-confidence[data-level="high"] { border-color: #c5f36a55; background: #c5f36a16; color: #d5f999; }
+    .field-confidence[data-level="medium"] { border-color: #f2c36e55; background: #f2c36e13; color: #f2d28d; }
+    .field-confidence[data-level="low"] { border-color: #ff9fa755; background: #ff9fa712; color: #ffb4bb; }
+    .field-confidence[data-level="edited"] { border-color: #9bc9ff55; background: #9bc9ff12; color: #b9d9ff; }
+    [hidden] { display: none !important; }
+    main { padding: 38px 0 56px; }
+    .intro { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 26px; }
+    .eyebrow { margin: 0 0 8px; color: var(--blue); font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .intro h2 { margin: 0; font-size: clamp(26px, 4vw, 36px); letter-spacing: -.045em; }
+    .intro p:last-child { max-width: 620px; margin: 9px 0 0; color: var(--muted); line-height: 1.55; }
+    .button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-height: 42px; padding: 0 15px; border: 0; border-radius: 9px; background: var(--blue); color: white; font-weight: 700; transition: background .15s, transform .15s; }
+    .button:hover:not(:disabled) { background: #3453d1; transform: translateY(-1px); }
+    .button.secondary { border: 1px solid var(--line); background: white; color: var(--ink); }
+    .button.secondary:hover:not(:disabled) { background: #f8fafc; }
+    .button.full { width: 100%; margin-top: 17px; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .metric, .panel { border: 1px solid var(--line); border-radius: 14px; background: white; box-shadow: 0 4px 16px #17203308; }
+    .metric { padding: 17px 19px; }
+    .metric-label { color: var(--muted); font-size: 12px; font-weight: 650; }
+    .metric-value { margin-top: 9px; font-size: 25px; font-weight: 760; letter-spacing: -.04em; }
+    .metric-note { margin-top: 4px; color: #8490a3; font-size: 11px; }
+    .work-area { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.2fr); align-items: start; gap: 18px; }
+    .panel { padding: 22px; }
+    .panel-heading { margin: 0; font-size: 17px; letter-spacing: -.02em; }
+    .panel-copy { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .upload-zone { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 155px; margin-top: 18px; padding: 18px; border: 1px dashed #bdc8d9; border-radius: 12px; background: #f9fbff; text-align: center; }
+    .upload-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: #e9efff; color: var(--blue); font-size: 20px; }
+    .upload-zone strong { margin-top: 10px; font-size: 13px; }
+    .upload-zone span { margin-top: 5px; color: var(--muted); font-size: 11px; }
+    .file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
+    .upload-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; width: 100%; margin-top: 13px; }
+    .upload-actions .button { min-height: 38px; padding: 0 9px; font-size: 12px; }
+    .preview { display: none; max-width: 100%; max-height: 200px; margin: 15px auto 0; border-radius: 8px; object-fit: contain; }
+    .file-name { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
+    .ai-note { margin: 14px 0 0; padding: 10px 11px; border-radius: 8px; background: #f3f6fb; color: #56647a; font-size: 11px; line-height: 1.45; }
+    .ai-note[data-state="ready"] { background: #effaf3; color: #287747; }
+    .ai-note[data-state="attention"] { background: #fff8e8; color: #805914; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+    .field { min-width: 0; margin-top: 13px; }
+    .field.wide { grid-column: 1 / -1; }
+    label { display: block; margin-bottom: 6px; color: #3b475b; font-size: 12px; font-weight: 700; }
+    input, select, textarea { width: 100%; min-height: 40px; padding: 9px 11px; border: 1px solid #d5dde8; border-radius: 8px; outline: none; background: white; color: var(--ink); }
+    input:focus, select:focus, textarea:focus { border-color: #8094f4; box-shadow: 0 0 0 3px #4263eb1c; }
+    textarea { min-height: 76px; resize: vertical; }
+    .field-hint { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
+    .declaration-label { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
+    .declaration-checkbox { width: auto; min-height: 0; margin: 0; padding: 0; }
+    .line-items { display: grid; gap: 8px; }
+    .line-item-row { display: grid; grid-template-columns: minmax(100px, 1.5fr) minmax(75px, .7fr) minmax(105px, 1fr) 34px; gap: 7px; align-items: center; }
+    .line-item-row input, .line-item-row select { min-width: 0; min-height: 36px; padding: 7px; font-size: 11px; }
+    .remove-line-item { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 7px; background: white; color: #8f3941; font-size: 17px; }
+    .line-item-head { display: grid; grid-template-columns: minmax(100px, 1.5fr) minmax(75px, .7fr) minmax(105px, 1fr) 34px; gap: 7px; color: #78849a; font-size: 9px; font-weight: 750; text-transform: uppercase; }
+    .rate-note { min-height: 16px; margin: 5px 0 0; color: var(--muted); font-size: 10px; }
+    .form-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+    .form-actions .button { margin-top: 15px; }
+    .notice { display: none; margin: 17px 0; padding: 13px 15px; border: 1px solid #d5e1f2; border-radius: 10px; background: #edf4ff; color: #263b5d; font-size: 13px; line-height: 1.5; white-space: pre-line; }
+    .notice[data-kind="error"] { border-color: #f1caca; background: #fff1f1; color: #8f2929; }
+    .notice[data-kind="success"] { border-color: #c9e9d3; background: #effaf3; color: #28663c; }
+    .demo-note { margin: -8px 0 20px; padding: 12px 15px; border: 1px solid #efdaa7; border-radius: 10px; background: #fff9e9; color: #71561d; font-size: 11px; line-height: 1.5; }
+    .dashboard { margin-top: 20px; padding: 0; overflow: hidden; }
+    .dashboard-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 22px; padding: 22px 24px; }
+    .dashboard-head-copy { max-width: 470px; }
+    .dashboard-kicker { margin: 0 0 6px; color: #c5f36a; font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .dashboard-head .panel-heading { font-size: 21px; }
+    .dashboard-tools { display: grid; grid-template-columns: minmax(175px, 1.2fr) minmax(125px, .85fr) minmax(125px, .85fr) auto auto; align-items: center; gap: 8px; width: min(760px, 68%); }
+    .dashboard-tools input, .dashboard-tools select { width: 100%; min-width: 0; min-height: 40px; border: 1px solid #383a40; border-radius: 9px; background: #101114; color: #f0eff2; font-size: 12px; }
+    .dashboard-tools .button { min-height: 40px; white-space: nowrap; }
+    .table-wrap { overflow: auto; max-height: min(68vh, 780px); scrollbar-color: #44464e #17181b; }
+    table { width: 100%; min-width: 1060px; border-collapse: separate; border-spacing: 0; text-align: left; }
+    th { position: sticky; z-index: 1; top: 0; padding: 12px 14px; border-bottom: 1px solid #34363c; background: #1c1d21; color: #a9aab3; font-size: 9px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; white-space: nowrap; }
+    td { padding: 15px 14px; border-top: 1px solid #25262b; color: #d0cfd5; font-size: 12px; vertical-align: top; }
+    tbody tr { transition: background .15s ease; }
+    tbody tr:hover { background: #ffffff05; }
+    tbody tr.claim-needs-review { background: linear-gradient(90deg, #f2c36e09, transparent 75%); }
+    tbody tr.claim-duplicate { background: linear-gradient(90deg, #ff8c9910, transparent 75%); }
+    .primary-cell { display: block; color: #f3f1ec; font-weight: 750; }
+    .secondary-cell { display: block; margin-top: 5px; color: #92939d; font-size: 10px; font-weight: 400; line-height: 1.45; }
+    .claim-id { color: #7c7d86; font-size: 9px; font-weight: 650; letter-spacing: .04em; }
+    .merchant-cell { min-width: 180px; }
+    .amount-cell { white-space: nowrap; font-weight: 750; }
+    .status-pill { display: inline-flex; padding: 5px 8px; border-radius: 999px; background: #eef2f7; color: #59667b; font-size: 10px; font-weight: 800; white-space: nowrap; }
+    .status-pill.compliant { background: #e9f8ef; color: #267442; }
+    .status-pill.review { background: #fff5dc; color: #855f11; }
+    .status-pill.duplicate { background: #ffeded; color: #9c3434; }
+    .reason-cell { min-width: 230px; max-width: 350px; color: #c4c3ca; line-height: 1.5; }
+    .reason-title { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; color: #e9e7ed; font-size: 10px; font-weight: 750; }
+    .reason-preview { display: -webkit-box; overflow: hidden; color: #a6a6af; font-size: 10px; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+    .claim-review-details { min-width: 230px; margin-top: 10px; padding: 9px 10px; border: 1px solid #34363b; border-radius: 9px; background: #1a1b20; }
+    .claim-review-details summary { color: #d0f987; font-size: 10px; font-weight: 750; cursor: pointer; }
+    .claim-review-content { display: grid; gap: 12px; min-width: min(540px, 70vw); margin-top: 12px; white-space: normal; }
+    .claim-review-content h4 { margin: 0 0 7px; color: #e8e6ec; font-size: 11px; }
+    .claim-review-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
+    .claim-review-field { min-width: 0; }
+    .claim-review-field dt { color: #92939d; font-size: 9px; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+    .claim-review-field dd { overflow-wrap: anywhere; margin: 3px 0 0; color: #e8e6ec; font-size: 11px; line-height: 1.5; }
+    .claim-review-warning { margin: 0; color: #f2d28d; font-size: 10px; line-height: 1.55; }
+    .claim-review-disclaimer { margin: 0; color: #a0a1a9; font-size: 10px; line-height: 1.5; }
+    .inbox-empty { padding: 48px 20px; text-align: center; }
+    .inbox-empty strong { display: block; color: #e8e6ec; font-size: 14px; }
+    .inbox-empty span { display: block; margin-top: 6px; color: #92939d; font-size: 11px; }
+    .reimbursement-button { min-height: 34px; padding: 0 12px; font-size: 10px; }
+    @media (max-width: 560px) {
+      .claim-review-content { min-width: 260px; }
+      .claim-review-grid { grid-template-columns: 1fr; }
+    }
+    .empty-state { padding: 35px 18px; color: var(--muted); text-align: center; font-size: 13px; }
+    .dashboard-foot { padding: 11px 18px; border-top: 1px solid #edf0f5; color: #8591a4; font-size: 11px; }
+    @media (max-width: 850px) {
+      .work-area { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .dashboard-head { align-items: stretch; flex-direction: column; }
+      .dashboard-tools { grid-template-columns: minmax(180px, 1fr) minmax(130px, .8fr) minmax(130px, .8fr) auto auto; width: 100%; }
+    }
+    @media (max-width: 560px) {
+      .topbar-inner, main { width: min(100% - 28px, 1180px); }
+      .topbar-inner { min-height: 68px; }
+      .brand p { display: none; }
+      .system-state { padding: 7px 8px; font-size: 10px; }
+      main { padding-top: 28px; }
+      .intro { align-items: flex-start; flex-direction: column; }
+      .intro .button { width: 100%; }
+      .metric { padding: 14px; }
+      .metric-value { font-size: 21px; }
+      .panel { padding: 17px; }
+      .dashboard-head { align-items: stretch; flex-direction: column; padding: 17px; }
+      .dashboard-tools { grid-template-columns: 1fr 1fr; width: 100%; }
+      .dashboard-tools input { grid-column: 1 / -1; }
+      .dashboard-tools select { width: 100%; }
+      .dashboard-tools .button { width: 100%; padding: 0 9px; font-size: 11px; }
+      .field-grid { grid-template-columns: 1fr; }
+      .field.wide { grid-column: auto; }
+      .line-item-row, .line-item-head { grid-template-columns: minmax(0, 1fr) 66px 92px 28px; gap: 5px; }
+      .line-item-row input, .line-item-row select { padding: 6px 4px; font-size: 10px; }
+      .remove-line-item { width: 28px; height: 30px; }
+      .role-nav { gap: 4px; }
+      .role-nav .button { min-height: 32px; padding: 0 7px; font-size: 10px; }
+      .role-picker { width: min(100% - 28px, 900px); margin: 38px auto; }
+      .role-cards { grid-template-columns: 1fr; }
+    }
+    body { overflow-x: clip; background: #0b0c0e; color: var(--ink); }
+    .topbar { position: relative; z-index: 2; background: #0b0c0e; border-bottom: 1px solid #ffffff14; }
+    .brand-mark { border-radius: 50%; background: #c5f36a; color: #15170f; }
+    .brand p { color: #9899a1; }
+    .system-state { border-color: #34363a; color: #c8c9ce; }
+    .role-nav .button.secondary { border-color: #393a3e; color: #d9d9de; }
+    .role-picker {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, .9fr);
+      grid-template-areas: "copy art" "cards art" "warning warning";
+      align-items: center;
+      column-gap: clamp(22px, 5vw, 72px);
+      row-gap: 18px;
+      width: min(1180px, calc(100% - 64px));
+      min-height: 650px;
+      margin: 0 auto;
+      padding: clamp(52px, 9vh, 104px) 0 58px;
+      isolation: isolate;
+    }
+    .role-picker::before {
+      position: absolute;
+      z-index: -1;
+      top: 30px;
+      right: -80px;
+      width: min(58vw, 650px);
+      height: 530px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, #8d56ed38 0%, #ff64bd1c 38%, #0b0c0e00 70%);
+      content: "";
+      pointer-events: none;
+    }
+    .landing-copy { position: relative; z-index: 1; grid-area: copy; max-width: 760px; }
+    .landing-kicker, .eyebrow { color: #c5f36a; }
+    .landing-kicker { display: inline-flex; align-items: center; gap: 9px; margin: 0 0 20px; font-size: 11px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+    .landing-kicker::before { width: 7px; height: 7px; border-radius: 50%; background: #c5f36a; box-shadow: 0 0 16px #c5f36a; content: ""; }
+    .role-picker h2 { max-width: 780px; font-size: clamp(48px, 8vw, 100px); line-height: .94; letter-spacing: -.075em; }
+    .role-picker-copy { max-width: 480px; margin: 22px 0 0; color: #adaeb6; font-size: 15px; line-height: 1.65; }
+    .hero-art {
+      position: relative;
+      grid-area: art;
+      display: grid;
+      width: 100%;
+      min-height: 440px;
+      place-items: center;
+      transform: rotate(3deg);
+    }
+    .hero-orbit {
+      position: absolute;
+      width: 350px;
+      height: 350px;
+      border: 1px solid #ffffff19;
+      border-radius: 50%;
+      box-shadow: 0 0 90px #bf74f31c, inset 0 0 70px #fa85c00b;
+    }
+    .hero-orbit::before, .hero-orbit::after { position: absolute; border-radius: 50%; content: ""; }
+    .hero-orbit::before { inset: 28px; border: 1px dashed #ffffff20; }
+    .hero-orbit::after { top: 20px; right: 57px; width: 12px; height: 12px; background: #ff8cc9; box-shadow: 0 0 22px #ff8cc9; }
+    .hero-receipt {
+      position: relative;
+      z-index: 1;
+      width: min(320px, 82%);
+      padding: 24px;
+      border: 1px solid #ffffff28;
+      border-radius: 22px;
+      background: linear-gradient(145deg, #24232c, #151619 70%);
+      box-shadow: 0 28px 90px #0009, 0 0 75px #bd7cff28;
+      transform: rotate(-7deg);
+    }
+    .receipt-topline { display: flex; justify-content: space-between; color: #aaaab2; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+    .receipt-merchant { margin: 28px 0 5px; font-size: 19px; font-weight: 750; letter-spacing: -.04em; }
+    .receipt-date { color: #92939d; font-size: 11px; }
+    .receipt-rule { height: 1px; margin: 19px 0; background: #ffffff20; }
+    .receipt-item { display: flex; justify-content: space-between; gap: 12px; margin: 11px 0; color: #b9bac2; font-size: 12px; }
+    .receipt-item.total { color: #fff; font-size: 14px; font-weight: 750; }
+    .receipt-verified { display: inline-flex; align-items: center; gap: 7px; margin-top: 20px; padding: 8px 10px; border: 1px solid #c5f36a38; border-radius: 999px; background: #c5f36a12; color: #d0f987; font-size: 10px; }
+    .receipt-verified::before { width: 6px; height: 6px; border-radius: 50%; background: #c5f36a; content: ""; }
+    .role-cards { position: relative; z-index: 1; grid-area: cards; grid-template-columns: 1fr 1fr; max-width: 760px; margin-top: 10px; }
+    .role-warning { grid-area: warning; margin-top: 8px; }
+    .role-card {
+      min-height: 190px;
+      padding: 21px;
+      border-color: #ffffff1b;
+      border-radius: 18px;
+      background: #16171acc;
+      box-shadow: 0 16px 50px #0004;
+      backdrop-filter: blur(14px);
+      transition: transform .2s ease, border-color .2s ease, background .2s ease;
+    }
+    .role-card:hover { transform: translateY(-4px); border-color: #c5f36a80; background: #1b1d1f; }
+    .role-card-icon { border-radius: 14px; background: linear-gradient(135deg, #c5f36a, #93dbe6); color: #15170f; }
+    .role-card:nth-child(2) .role-card-icon { background: linear-gradient(135deg, #ff98c9, #b98cff); }
+    .role-card h3 { color: #f4f2ed; }
+    .role-card p { color: #a2a3ab; }
+    .role-warning { border-color: #f3ce7a35; background: #c6931712; color: #d8c38e; }
+    main { padding-top: 42px; }
+    .intro h2 { color: #f5f3ee; font-size: clamp(34px, 5vw, 56px); letter-spacing: -.065em; }
+    .intro p:last-child, .panel-copy { color: #a0a1a9; }
+    .button { border-radius: 999px; background: #c5f36a; color: #17190f; }
+    .button:hover:not(:disabled) { background: #d6ff82; }
+    .button.secondary { border-color: #393a40; background: #1a1b1f; color: #eeedf0; }
+    .button.secondary:hover:not(:disabled) { background: #26272b; }
+    .metric, .panel { border-color: #2e3035; border-radius: 17px; background: #151619; box-shadow: 0 8px 32px #0002; }
+    .metric-label { color: #bdbec6; }
+    .metric-value, .panel-heading { color: #f3f1ec; }
+    .metric-note, .secondary-cell { color: #8c8e98; }
+    .upload-zone { border-color: #5c5963; background: #1a1b20; }
+    .upload-icon { border-radius: 15px; background: #c5f36a18; color: #c5f36a; }
+    .upload-zone span, .field-hint { color: #a0a1a9; }
+    .ai-note { background: #202126; color: #c1c2c9; }
+    .ai-note[data-state="ready"] { background: #c5f36a12; color: #d1f68e; }
+    .ai-note[data-state="attention"] { background: #e5aa3015; color: #f0ce7f; }
+    label { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #d6d5da; }
+    input, select, textarea { border-color: #383a40; background: #101114; color: #f0eff2; }
+    input::placeholder, textarea::placeholder { color: #777983; }
+    input:focus, select:focus, textarea:focus { border-color: #c5f36a; box-shadow: 0 0 0 3px #c5f36a1c; }
+    .rate-note { color: #9b9ca5; }
+    .remove-line-item { border-color: #383a40; background: #191a1d; color: #ff9aab; }
+    .notice { border-color: #4b566c; background: #1a202a; color: #d9e3f4; }
+    .notice[data-kind="error"] { border-color: #a95054; background: #321a1d; color: #ffc3c1; }
+    .notice[data-kind="success"] { border-color: #668a3f; background: #1c2816; color: #d8f5b4; }
+    .demo-note { border-color: #f3ce7a35; background: #c6931712; color: #d8c38e; }
+    .dashboard-head, .dashboard-foot { border-color: #2e3035; }
+    .status-pill { background: #292a30; color: #c1c1c9; }
+    .status-pill.compliant { background: #c5f36a18; color: #d2f696; }
+    .status-pill.review { background: #e1a52518; color: #f2d28b; }
+    .status-pill.duplicate { background: #fa718018; color: #ffa7ae; }
+    .status-pill.reimbursed { background: #c5f36a18; color: #d2f696; }
+    .status-pill.awaiting-reimbursement { background: #292a30; color: #c1c1c9; }
+    .empty-state { color: #9b9ca5; }
+    .metric[data-metric="review"] { border-color: #8c6a2b80; background: linear-gradient(145deg, #211d15, #151619 72%); }
+    .metric[data-metric="review"] .metric-value { color: #f2d28d; }
+    .metric[data-metric="eligible"] .metric-value { color: #d5f999; }
+    .company-dashboard { border-color: #34353a; }
+    .dashboard-tools input:focus, .dashboard-tools select:focus { border-color: #c5f36a; outline: 2px solid #c5f36a26; }
+    .dashboard-tools :focus-visible, .claim-review-details summary:focus-visible, .reimbursement-button:focus-visible { outline: 2px solid #c5f36a; outline-offset: 2px; }
+    a { color: #d0f987; }
+    .reimbursement-button { border-color: #c5f36a45 !important; background: #c5f36a12 !important; color: #d5f999 !important; }
+    .reimbursement-button:hover:not(:disabled) { background: #c5f36a25 !important; }
+    @media (max-width: 850px) {
+      .role-picker { display: block; min-height: auto; padding-top: 64px; }
+      .role-picker::before { top: 50px; right: -100px; width: 90vw; height: 400px; }
+      .hero-art { width: 100%; min-height: 285px; margin: 15px auto 0; }
+      .hero-orbit { width: 270px; height: 270px; }
+      .hero-receipt { width: min(300px, 78%); }
+      .role-cards { grid-template-columns: 1fr 1fr; margin-top: 20px; }
+    }
+    @media (max-width: 560px) {
+      .role-picker { width: min(100% - 32px, 900px); }
+      .role-picker h2 { font-size: clamp(47px, 14vw, 68px); }
+      .landing-copy { max-width: 100%; }
+      .landing-kicker { font-size: 9px; }
+      .hero-art { min-height: 270px; }
+      .hero-orbit { width: 245px; height: 245px; }
+      .hero-receipt { padding: 19px; }
+      .role-card { min-height: 175px; }
+      .role-cards { grid-template-columns: 1fr; }
+      .topbar-inner { gap: 10px; }
+      .brand { gap: 8px; }
+      .brand h1 { font-size: 16px; }
+      .system-state { max-width: 135px; overflow: hidden; text-overflow: ellipsis; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">E</div>
+        <div>
+          <h1>ExpenseIQ</h1>
+          <p>Expense auditing and reimbursement checks</p>
+        </div>
+      </div>
+      <nav class="role-nav" aria-label="Workspace" id="role-nav" hidden>
+        <button id="employee-nav" class="button secondary" type="button">Employee</button>
+        <button id="company-nav" class="button secondary" type="button">Company</button>
+        <button id="home-nav" class="button secondary" type="button">Switch role</button>
+      </nav>
+      <div id="system-state" class="system-state" data-state="loading" role="status">
+        <span class="state-dot" aria-hidden="true"></span>
+        <span id="system-state-label">Connecting to services</span>
+      </div>
+    </div>
+  </header>
+
+  <section id="role-picker" class="role-picker">
+    <div class="landing-copy">
+      <p class="landing-kicker" id="workspace-eyebrow">The delightful side of expense control</p>
+      <h2>Receipts in.<br>Clarity out.</h2>
+      <p class="role-picker-copy">A little less paperwork, a lot more peace of mind. Scan, review, and keep every expense in its place.</p>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="hero-orbit"></div>
+      <div class="hero-receipt">
+        <div class="receipt-topline"><span>ExpenseIQ · scan</span><span>01 / 01</span></div>
+        <p class="receipt-merchant">Good things market</p>
+        <span class="receipt-date">Today · 10:42 AM</span>
+        <div class="receipt-rule"></div>
+        <div class="receipt-item"><span>Fresh finds</span><span>₹ 840</span></div>
+        <div class="receipt-item"><span>Little treats</span><span>₹ 260</span></div>
+        <div class="receipt-item"><span>Taxes</span><span>₹ 54</span></div>
+        <div class="receipt-rule"></div>
+        <div class="receipt-item total"><span>Total</span><span>₹ 1,154</span></div>
+        <span class="receipt-verified">AI review · ready for you</span>
+      </div>
+    </div>
+    <div class="role-cards">
+      <article class="role-card">
+        <div class="role-card-icon" aria-hidden="true">↗</div>
+        <h3>Employee workspace</h3>
+        <p>Scan a bill with Gemini, confirm the purchase details, and track your submissions.</p>
+        <button class="button" id="choose-employee" type="button">Continue as employee</button>
+      </article>
+      <article class="role-card">
+        <div class="role-card-icon" aria-hidden="true">▤</div>
+        <h3>Company workspace</h3>
+        <p>Review submitted claims, policy flags, potential duplicates, and reimbursement tracking.</p>
+        <button class="button secondary" id="choose-company" type="button">Open company dashboard</button>
+      </article>
+    </div>
+    <p class="role-warning"><strong>Demo access:</strong> These workspace choices organize the interface; they are not sign-in or access control. Add company authentication and employee identity verification before using real financial data.</p>
+  </section>
+
+  <main id="workspace" hidden>
+    <section class="intro">
+      <div>
+        <p class="eyebrow">Expense operations</p>
+        <h2 id="workspace-title">Verify a purchase.</h2>
+        <p id="workspace-description">Scan your bill, check the extracted details, and submit your expense for review.</p>
+      </div>
+      <button id="refresh-top" class="button secondary" type="button">Refresh</button>
+    </section>
+    <aside class="demo-note company-only" hidden><strong>Demo policy assumptions, not company policy:</strong> ₹5,000 related-claim review threshold, ₹2,000 daily meal cap, 60-day submission window in Asia/Kolkata, ECB-reference currency conversion with a 2% variance flag. Unverified business purpose, travel authorization, and suspicious matches go to human review.</aside>
+
+    <section class="metrics company-only" aria-label="Claims summary" hidden>
+      <article class="metric"><div class="metric-label">Claims shown</div><div id="metric-total" class="metric-value">—</div><div class="metric-note">Recent saved submissions</div></article>
+      <article class="metric"><div class="metric-label">Clear checks</div><div id="metric-compliant" class="metric-value">—</div><div class="metric-note">No configured flags</div></article>
+      <article class="metric" data-metric="review"><div class="metric-label">Needs review</div><div id="metric-review" class="metric-value">—</div><div class="metric-note">Policy, receipt, or duplicate flags</div></article>
+      <article class="metric" data-metric="eligible"><div class="metric-label">Eligible amount</div><div id="metric-eligible" class="metric-value">—</div><div class="metric-note">Across the claims shown</div></article>
+    </section>
+
+    <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+    <section class="work-area" id="employee-work">
+      <article class="panel">
+        <h3 class="panel-heading">Receipt assistant</h3>
+        <p class="panel-copy">Add a receipt image to extract details and detect repeated uploads.</p>
+        <div class="upload-zone">
+          <div class="upload-icon" aria-hidden="true">↑</div>
+          <strong>Choose a receipt image</strong>
+          <span class="file-name" id="file-name">JPG, PNG, or WebP · up to 5 MB</span>
+          <input id="receipt-file" class="file-input" type="file" accept="image/jpeg,image/png,image/webp">
+          <div class="upload-actions">
+            <button id="choose-file" class="button secondary" type="button">Choose image</button>
+            <button id="analyze-receipt" class="button" type="button" disabled>Read with AI</button>
+          </div>
+        </div>
+        <img id="receipt-preview" class="preview" alt="Selected receipt preview">
+        <p id="ai-note" class="ai-note" data-state="loading">Checking receipt AI availability…</p>
+      </article>
+
+      <article class="panel">
+        <h3 class="panel-heading">Claim details</h3>
+        <p class="panel-copy">Review extracted values or enter the claim manually before submitting.</p>
+        <form id="claim-form">
+          <div class="field-grid">
+            <div class="field"><label for="employee-id">Employee ID</label><input id="employee-id" name="employeeId" value="EMP101" maxlength="80" required></div>
+            <div class="field"><label for="merchant">Merchant <span class="field-confidence" data-confidence-for="merchant" hidden></span></label><input id="merchant" name="merchant" maxlength="160" required></div>
+            <div class="field"><label for="original-currency">Receipt currency <span class="field-confidence" data-confidence-for="currency" hidden></span></label><select id="original-currency" name="originalCurrency" required><option value="">Select currency</option><option value="INR" selected>INR</option><option>USD</option><option>EUR</option><option>GBP</option><option>AED</option><option>SGD</option><option>AUD</option><option>CAD</option><option>JPY</option><option>CHF</option></select></div>
+            <div class="field"><label for="original-amount">Original transaction amount <span class="field-confidence" data-confidence-for="amount" hidden></span></label><input id="original-amount" name="originalAmount" type="number" min="0.01" max="21474836.47" step="0.01" inputmode="decimal" required><p id="rate-note" class="rate-note">INR claims use the receipt amount directly.</p></div>
+            <div class="field"><label for="amount">Claim amount (INR)</label><input id="amount" name="amountRupees" type="number" min="0.01" max="21474836.47" step="0.01" inputmode="decimal" required></div>
+            <div class="field"><label for="category">Category <span class="field-confidence" data-confidence-for="category" hidden></span></label><select id="category" name="category"><option value="meal">Meal</option><option value="travel">Travel</option><option value="hotel">Hotel</option><option value="other">Other</option></select></div>
+            <div class="field"><label for="expense-date">Expense date <span class="field-confidence" data-confidence-for="expenseDate" hidden></span></label><input id="expense-date" name="expenseDate" type="date" required></div>
+            <div class="field advanced-field"><label for="client-name">Client name <span class="secondary-cell">(optional)</span></label><input id="client-name" name="clientName" maxlength="160"></div>
+            <div class="field advanced-field ocr-field"><label for="tax">Receipt tax <span class="field-confidence" data-confidence-for="tax" hidden></span></label><input id="tax" name="tax" type="number" min="0" step="0.01" value="0"></div>
+            <div class="field advanced-field ocr-field"><label for="tip">Tip / gratuity <span class="field-confidence" data-confidence-for="tip" hidden></span></label><input id="tip" name="tip" type="number" min="0" step="0.01" value="0"></div>
+            <div class="field advanced-field ocr-field"><label for="discount">Discount <span class="field-confidence" data-confidence-for="discount" hidden></span></label><input id="discount" name="discount" type="number" min="0" step="0.01" value="0"></div>
+            <div class="field advanced-field"><label for="trip-reference">Authorized trip reference</label><input id="trip-reference" name="tripReference" maxlength="100"></div>
+            <div class="field advanced-field"><label for="trip-date">Trip start date</label><input id="trip-date" name="tripDate" type="date"></div>
+            <div class="field wide advanced-field"><label for="attendees">Attendees</label><input id="attendees" name="attendees" maxlength="500" placeholder="Names of attendees, separated by commas"></div>
+            <div class="field"><label for="transaction-reference">Transaction reference <span class="secondary-cell">(optional)</span></label><input id="transaction-reference" name="transactionReference" maxlength="100" placeholder="Receipt or card transaction ID"></div>
+            <div class="field"><label for="supporting-evidence">Supporting evidence <span class="secondary-cell">(optional)</span></label><input id="supporting-evidence" name="supportingEvidence" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"><p class="field-hint">Attach an invoice, order confirmation, or other evidence. JPG, PNG, WebP, or PDF · up to 10 MB.</p></div>
+            <div id="lost-receipt-fields" class="field wide" hidden>
+              <label class="declaration-label"><input id="lost-receipt-declared" class="declaration-checkbox" type="checkbox"> I declare that the receipt is lost or unavailable.</label>
+              <label for="lost-receipt-declaration">Explain why the receipt is unavailable</label>
+              <textarea id="lost-receipt-declaration" maxlength="1000" minlength="10" placeholder="Describe what happened and why a receipt cannot be provided."></textarea>
+              <p class="field-hint">Claims without a receipt are always sent for human review. Add supporting evidence above if available.</p>
+            </div>
+            <div id="line-items-field" class="field wide advanced-field ocr-field"><label>Receipt line items <span class="field-confidence" data-confidence-for="lineItems" hidden></span></label>
+              <div class="line-item-head" aria-hidden="true"><span>Description</span><span>Amount</span><span>Type</span><span></span></div>
+              <div id="line-item-list" class="line-items"></div>
+              <button id="add-line-item" class="button secondary" type="button">Add line item</button>
+              <p class="field-hint">Receipt line items are extracted by Gemini and used for the eligibility review.</p>
+            </div>
+            <div class="field wide"><label for="purpose">Business purpose</label><textarea id="purpose" name="purpose" maxlength="1000" minlength="5" placeholder="Briefly describe the business reason." required></textarea></div>
+          </div>
+          <p id="ocr-confidence-note" class="ocr-confidence-note" hidden>Confidence is Gemini’s qualitative estimate, not a calibrated probability. Check every value and edit anything that looks wrong before submitting.</p>
+          <div class="form-actions">
+            <button id="submit-claim" class="button" type="submit">Check and submit claim</button>
+            <button id="clear-form" class="button secondary" type="reset">Clear details</button>
+          </div>
+        </form>
+      </article>
+    </section>
+
+    <section class="panel employee-claims" id="employee-claims" hidden>
+      <h3 class="panel-heading">Your submissions</h3>
+      <p class="panel-copy">Recent claims saved with this employee ID.</p>
+      <div id="employee-claims-list" class="employee-claims-list"><p class="empty-state">Enter your employee ID to view submissions.</p></div>
+    </section>
+
+    <section class="panel dashboard company-dashboard company-only" aria-labelledby="dashboard-title" hidden>
+      <div class="dashboard-head">
+        <div class="dashboard-head-copy">
+          <p class="dashboard-kicker">Finance workspace</p>
+          <h3 id="dashboard-title" class="panel-heading">Claims inbox</h3>
+          <p class="panel-copy">Prioritize flagged claims, inspect evidence, and track reimbursements.</p>
+        </div>
+        <div class="dashboard-tools">
+          <input id="search-claims" type="search" aria-label="Search claims" placeholder="Search employee, claim ID, merchant">
+          <select id="filter-status" aria-label="Filter claims by status">
+            <option value="">All statuses</option>
+            <option value="ATTENTION">Needs review</option>
+            <option value="UNREIMBURSED">Awaiting reimbursement</option>
+            <option value="REIMBURSED">Reimbursed</option>
+            <option value="COMPLIANT">Compliant</option>
+            <option value="NEEDS_REVIEW">Needs review</option>
+            <option value="POSSIBLE_DUPLICATE">Possible duplicate</option>
+          </select>
+          <select id="sort-claims" aria-label="Sort claims">
+            <option value="priority">Priority first</option>
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest expense</option>
+            <option value="amount">Highest amount</option>
+          </select>
+          <button id="refresh-claims" class="button secondary" type="button">Refresh</button>
+          <button id="clear-filters" class="button secondary" type="button">Clear filters</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Employee / dates</th><th>Merchant / purpose</th><th>Amount / currency</th><th>Eligible</th><th>Category</th><th>Status</th><th>Policy notes</th><th>Reimbursement</th></tr></thead>
+          <tbody id="claims-body"><tr><td colspan="8" class="empty-state">Loading recent claims…</td></tr></tbody>
+        </table>
+      </div>
+      <div id="dashboard-foot" class="dashboard-foot">Showing up to 100 recent claims.</div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const $ = (selector) => document.querySelector(selector);
+      const fileInput = $("#receipt-file");
+      const form = $("#claim-form");
+      const notice = $("#notice");
+      const stateBadge = $("#system-state");
+      const aiNote = $("#ai-note");
+      const claimsBody = $("#claims-body");
+      const currency = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" });
+      let claims = [];
+      let receiptHash = "";
+      let previewUrl = "";
+      let busy = false;
+      let fxRequestId = 0;
+      let workspaceRole = "";
+      let perceptualHash = "";
+
+      function showNotice(message, kind = "info") {
+        notice.textContent = message;
+        notice.dataset.kind = kind;
+        notice.style.display = "block";
+      }
+
+      function clearNotice() {
+        notice.textContent = "";
+        notice.style.display = "none";
+      }
+
+      function setBusy(value) {
+        busy = value;
+        $("#analyze-receipt").disabled = busy || !fileInput.files.length;
+        $("#submit-claim").disabled = busy;
+        $("#refresh-claims").disabled = busy;
+        $("#refresh-top").disabled = busy;
+      }
+
+      async function apiRequest(url, options) {
+        const response = await fetch(url, options);
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || `Request failed (${response.status}).`);
+        return data;
+      }
+
+      async function loadServiceStatus() {
+        try {
+          const status = await apiRequest("/api/status");
+          const aiReady = Boolean(status.receiptAI);
+          stateBadge.dataset.state = aiReady ? "ready" : "attention";
+          $("#system-state-label").textContent = aiReady ? "API and receipt AI ready" : "API ready · AI not configured";
+          aiNote.dataset.state = aiReady ? "ready" : "attention";
+          aiNote.textContent = aiReady
+            ? `Receipt analysis is ready (${status.model}). Your API key is kept on the server.`
+            : "Manual claim entry and policy checks are available. Configure GEMINI_API_KEY in the server .env file to enable receipt analysis.";
+          $("#analyze-receipt").title = aiReady ? "" : "Configure the Gemini API key on the server first.";
+        } catch (error) {
+          try {
+            const response = await fetch("/api/claims");
+            if (!response.ok) throw error;
+            stateBadge.dataset.state = "attention";
+            $("#system-state-label").textContent = "API connected · restart for status";
+            aiNote.dataset.state = "attention";
+            aiNote.textContent = "The API is online, but this server version does not report AI status. Restart ExpenseIQ to enable the full service checks.";
+          } catch (fallbackError) {
+            stateBadge.dataset.state = "attention";
+            $("#system-state-label").textContent = "Backend status unavailable";
+            aiNote.dataset.state = "attention";
+            aiNote.textContent = "Could not confirm receipt AI availability. Check that the ExpenseIQ server is running.";
+            console.error("Could not load service status:", fallbackError);
+          }
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        })[character]);
+      }
+
+      function clearOcrConfidence() {
+        document.querySelectorAll("[data-confidence-for]").forEach((badge) => {
+          badge.hidden = true;
+          badge.textContent = "";
+          delete badge.dataset.level;
+        });
+        $("#ocr-confidence-note").hidden = true;
+        $("#employee-work").classList.remove("receipt-scanned");
+      }
+
+      function showOcrConfidence(confidence = {}) {
+        const labels = {
+          merchant: "Merchant",
+          amount: "Amount",
+          currency: "Currency",
+          category: "Category",
+          expenseDate: "Date",
+          tax: "Tax",
+          tip: "Tip",
+          discount: "Discount",
+          lineItems: "Line items"
+        };
+        const missing = [];
+        for (const [field, label] of Object.entries(labels)) {
+          const badge = document.querySelector(`[data-confidence-for="${field}"]`);
+          const value = confidence[field];
+          const level = ["high", "medium", "low"].includes(value) ? value : "low";
+          badge.hidden = false;
+          badge.dataset.level = level;
+          badge.textContent = `AI confidence · ${level}`;
+          badge.title = "Gemini's qualitative estimate only; this is not a calibrated probability.";
+          const hasValue = field === "lineItems"
+            ? $("#line-item-list").querySelectorAll(".line-item-row").length > 0
+            : field === "amount"
+              ? Number($("#original-amount").value) > 0
+              : field === "tax" || field === "tip" || field === "discount"
+                ? level !== "low"
+                : Boolean({
+                  merchant: $("#merchant").value.trim(),
+                  currency: $("#original-currency").value,
+                  category: $("#category").value,
+                  expenseDate: $("#expense-date").value
+                }[field]);
+          if (level === "low" || !hasValue) missing.push(label);
+        }
+        $("#employee-work").classList.add("receipt-scanned");
+        $("#ocr-confidence-note").hidden = false;
+        $("#ocr-confidence-note").textContent = missing.length
+          ? `AI-estimated confidence is low or a value is missing for: ${[...new Set(missing)].join(", ")}. Review or enter these fields. Confidence is qualitative guidance, not a calibrated probability.`
+          : "Gemini estimates high or medium confidence for the extracted fields. Review and edit every value; confidence is qualitative guidance, not a calibrated probability.";
+      }
+
+      function markOcrFieldEdited(field) {
+        const badge = document.querySelector(`[data-confidence-for="${field}"]`);
+        if (!badge || badge.hidden) return;
+        badge.dataset.level = "edited";
+        badge.textContent = "Manually edited";
+        badge.title = "This value was changed after OCR; verify it against the receipt.";
+        $("#ocr-confidence-note").textContent = "Manually edited values are marked. Verify edited and low-confidence fields against the receipt; AI confidence is qualitative guidance, not a calibrated probability.";
+      }
+
+      function statusLabel(status) {
+        if (status === "COMPLIANT") return "Compliant";
+        if (status === "POSSIBLE_DUPLICATE") return "Possible duplicate";
+        return "Needs review";
+      }
+
+      function statusClass(status) {
+        if (status === "COMPLIANT") return "compliant";
+        if (status === "POSSIBLE_DUPLICATE") return "duplicate";
+        return "review";
+      }
+
+      function selectWorkspace(role) {
+        workspaceRole = role;
+        $("#role-picker").hidden = true;
+        $("#workspace").hidden = false;
+        $("#role-nav").hidden = false;
+        const isCompany = role === "company";
+        $("#employee-work").hidden = isCompany;
+        $("#employee-claims").hidden = isCompany;
+        document.querySelectorAll(".company-only").forEach((element) => {
+          element.hidden = !isCompany;
+        });
+        $("#workspace-title").textContent = isCompany ? "Review company expenses." : "Verify a purchase.";
+        $("#workspace-description").textContent = isCompany
+          ? "Review policy outcomes, receipt-analysis signals, possible duplicates, and reimbursement status."
+          : "Scan your bill, check the extracted details, and submit your expense for review.";
+        $("#employee-nav").classList.toggle("secondary", isCompany);
+        $("#company-nav").classList.toggle("secondary", !isCompany);
+        clearNotice();
+        if (isCompany) {
+          loadClaims().catch((error) => {
+            showNotice(error.message || "Could not load company claims.", "error");
+            claimsBody.innerHTML = '<tr><td colspan="8" class="empty-state">Could not load claims. Confirm the API server is running, then refresh.</td></tr>';
+          });
+        } else {
+          loadEmployeeClaims().catch((error) => {
+            showNotice(error.message || "Could not load employee submissions.", "error");
+          });
+        }
+      }
+
+      async function loadEmployeeClaims() {
+        const employeeId = $("#employee-id").value.trim();
+        const list = $("#employee-claims-list");
+        if (!employeeId) {
+          list.innerHTML = '<p class="empty-state">Enter your employee ID to view submissions.</p>';
+          return;
+        }
+        const query = new URLSearchParams({ employeeId });
+        const data = await apiRequest(`/api/claims?${query}`);
+        if (!Array.isArray(data)) throw new Error("The claims API returned an invalid response.");
+        list.innerHTML = data.length ? data.map((claim) => {
+          let signals = [];
+          try {
+            signals = JSON.parse(claim.receiptSignalsJson || "[]");
+          } catch (error) {
+            console.error("Invalid stored receipt review signals:", error);
+          }
+          const notes = [claim.warning, ...signals].filter(Boolean);
+          const reimbursementStatus = claim.reimbursedAt
+            ? `<span class="status-pill reimbursed">Reimbursed</span> · ${escapeHtml(new Date(claim.reimbursedAt).toLocaleDateString("en-IN"))}`
+            : '<span class="status-pill awaiting-reimbursement">Awaiting reimbursement</span>';
+          return `<article class="employee-claim">
+            <strong>${escapeHtml(claim.merchant)} · ${currency.format(Number(claim.amountPaise) / 100)}</strong>
+            <span class="status-pill ${statusClass(claim.status)}">${statusLabel(claim.status)}</span>
+            <p>Expense ${escapeHtml(claim.expenseDate ? new Date(claim.expenseDate).toLocaleDateString("en-IN") : "—")} · Submitted ${escapeHtml(claim.createdAt ? new Date(claim.createdAt).toLocaleDateString("en-IN") : "—")}</p>
+            <p>Reimbursement: ${reimbursementStatus}</p>
+            ${claim.lostReceiptDeclaration ? '<p><span class="status-pill review">Lost receipt · review required</span></p>' : ""}
+            ${claim.evidenceName ? `<p>Supporting evidence: <a href="/api/claims/${Number(claim.id)}/evidence" target="_blank" rel="noopener">${escapeHtml(claim.evidenceName)}</a></p>` : ""}
+            <p>Receipt review: ${escapeHtml(claim.receiptAssessment === "NEEDS_REVIEW" ? "Needs human review" : claim.receiptAssessment === "NO_OBVIOUS_ISSUES" ? "No obvious issues detected (not proof of authenticity)" : "No AI receipt analysis linked")}</p>
+            ${notes.length ? `<p>${escapeHtml([...new Set(notes)].join(" "))}</p>` : ""}
+          </article>`;
+        }).join("") : '<p class="empty-state">No submissions found for this employee ID.</p>';
+      }
+
+      function addLineItem(item = {}) {
+        const row = document.createElement("div");
+        row.className = "line-item-row";
+        const safeDescription = escapeHtml(item.description || "");
+        const safeKind = ["meal", "beverage", "travel", "lodging", "business", "alcohol", "personal", "tobacco", "entertainment", "souvenir", "unknown"].includes(item.kind)
+          ? item.kind
+          : "unknown";
+        row.innerHTML = `<input class="line-description" aria-label="Item description" placeholder="e.g. Lunch" value="${safeDescription}" maxlength="160">
+          <input class="line-amount" aria-label="Item amount in receipt currency" type="number" min="0.01" step="0.01" value="${Number(item.amount) > 0 ? Number(item.amount) : ""}">
+          <select class="line-kind" aria-label="Reimbursement type">
+            <option value="meal">Meal</option><option value="beverage">Non-alcoholic beverage</option><option value="travel">Travel</option><option value="lodging">Lodging</option><option value="business">Other business</option><option value="personal">Personal</option><option value="alcohol">Alcohol</option><option value="tobacco">Tobacco</option><option value="entertainment">Entertainment</option><option value="souvenir">Souvenir</option><option value="unknown">Unknown</option>
+          </select>
+          <button class="remove-line-item" type="button" aria-label="Remove line item">×</button>`;
+        row.querySelector(".line-kind").value = safeKind;
+        row.querySelector(".remove-line-item").addEventListener("click", () => row.remove());
+        $("#line-item-list").append(row);
+      }
+
+      function setLineItemsVisible(visible) {
+        $("#line-items-field").classList.toggle("advanced-field", !visible);
+      }
+
+      function updateTripFields() {
+        const tripRequired = ["travel", "hotel"].includes($("#category").value);
+        $("#trip-reference").required = tripRequired;
+        $("#trip-date").required = tripRequired;
+        $("#trip-reference").closest(".field").classList.toggle("advanced-field", !tripRequired);
+        $("#trip-date").closest(".field").classList.toggle("advanced-field", !tripRequired);
+      }
+
+      function getLineItems() {
+        return Array.from($("#line-item-list").querySelectorAll(".line-item-row")).map((row) => ({
+          description: row.querySelector(".line-description").value.trim(),
+          amount: Number(row.querySelector(".line-amount").value),
+          kind: row.querySelector(".line-kind").value
+        })).filter((item) => item.description && item.amount > 0);
+      }
+
+      async function updateExchangeQuote() {
+        const originalAmount = Number($("#original-amount").value);
+        const currencyCode = $("#original-currency").value;
+        const date = $("#expense-date").value;
+        const requestId = ++fxRequestId;
+        if (!originalAmount || !date) return;
+        if (currencyCode === "INR") {
+          $("#amount").value = originalAmount.toFixed(2);
+          $("#rate-note").textContent = "INR receipt: no currency conversion applied.";
+          return;
+        }
+
+        $("#rate-note").textContent = "Loading transaction-date ECB reference rate…";
+        try {
+          const query = new URLSearchParams({ currency: currencyCode, date });
+          const quote = await apiRequest(`/api/exchange-rate?${query}`);
+          if (requestId !== fxRequestId) return;
+          const converted = Math.round(originalAmount * quote.rate * 100) / 100;
+          $("#amount").value = converted.toFixed(2);
+          $("#rate-note").textContent = `1 ${currencyCode} = ₹${quote.rate} (${quote.rateDate}, ${quote.source}). Verify company policy rate.`;
+        } catch (error) {
+          if (requestId !== fxRequestId) return;
+          $("#rate-note").textContent = error.message || "Could not load reference rate; foreign-currency claim cannot be verified.";
+        }
+      }
+
+      function renderClaims() {
+        const search = $("#search-claims").value.trim().toLowerCase();
+        const selectedStatus = $("#filter-status").value;
+        const selectedSort = $("#sort-claims").value;
+        const visibleClaims = claims.filter((claim) => {
+          const needsReview = claim.status !== "COMPLIANT";
+          const reimbursed = Boolean(claim.reimbursedAt);
+          const matchesStatus = !selectedStatus ||
+            (selectedStatus === "ATTENTION" ? needsReview :
+              selectedStatus === "UNREIMBURSED" ? !reimbursed :
+                selectedStatus === "REIMBURSED" ? reimbursed :
+                  claim.status === selectedStatus);
+          const matchesSearch = !search || [
+            claim.id, claim.employeeId, claim.merchant, claim.clientName, claim.purpose,
+            claim.attendees, claim.tripReference, claim.transactionReference
+          ].some((value) => String(value || "").toLowerCase().includes(search));
+          return matchesStatus && matchesSearch;
+        }).sort((first, second) => {
+          if (selectedSort === "newest") return new Date(second.createdAt || 0) - new Date(first.createdAt || 0);
+          if (selectedSort === "oldest") return new Date(first.expenseDate || 0) - new Date(second.expenseDate || 0);
+          if (selectedSort === "amount") return Number(second.amountPaise) - Number(first.amountPaise);
+          const priority = (claim) => claim.status === "POSSIBLE_DUPLICATE" ? 0
+            : claim.status !== "COMPLIANT" ? 1
+              : claim.reimbursedAt ? 3 : 2;
+          return priority(first) - priority(second) ||
+            new Date(second.createdAt || 0) - new Date(first.createdAt || 0);
+        });
+
+        const compliant = claims.filter((claim) => claim.status === "COMPLIANT").length;
+        const attention = claims.length - compliant;
+        const eligible = claims.reduce((total, claim) => total + (Number(claim.eligiblePaise) || 0), 0);
+        $("#metric-total").textContent = claims.length;
+        $("#metric-compliant").textContent = compliant;
+        $("#metric-review").textContent = attention;
+        $("#metric-eligible").textContent = currency.format(eligible / 100);
+        $("#dashboard-foot").textContent = `Showing ${visibleClaims.length} of ${claims.length} recent claims (maximum 100).`;
+
+        if (!visibleClaims.length) {
+          claimsBody.innerHTML = `<tr><td colspan="8" class="empty-state"><div class="inbox-empty"><strong>${claims.length ? "No claims match this view" : "Your claims inbox is clear"}</strong><span>${claims.length ? "Try clearing filters or searching another employee or merchant." : "New employee submissions will appear here."}</span></div></td></tr>`;
+          return;
+        }
+
+        claimsBody.innerHTML = visibleClaims.map((claim) => {
+          const date = claim.expenseDate ? new Date(claim.expenseDate).toLocaleDateString("en-IN") : "—";
+          const submittedDate = claim.createdAt ? new Date(claim.createdAt).toLocaleDateString("en-IN") : "—";
+          const amount = Number(claim.amountPaise) / 100;
+          const eligibleAmount = Number(claim.eligiblePaise ?? claim.amountPaise) / 100;
+          const originalAmount = claim.originalAmountPaise == null ? null : Number(claim.originalAmountPaise) / 100;
+          let lineItems = [];
+          let extractedReceipt = {};
+          try { lineItems = JSON.parse(claim.lineItemsJson || "[]"); } catch (error) { console.error("Invalid stored receipt line items:", error); }
+          try { extractedReceipt = JSON.parse(claim.extractedReceiptJson || "{}"); } catch (error) { console.error("Invalid stored receipt extraction:", error); }
+          const itemSummary = lineItems.map((item) => `${item.description}: ${currency.format(Number(item.amountPaise) / 100)}`).join(" · ");
+          const extractedItems = Array.isArray(extractedReceipt.lineItems)
+            ? extractedReceipt.lineItems.map((item) => `${item.description}: ${Number(item.amount).toFixed(2)} ${extractedReceipt.currency || ""} (${item.kind})`).join(" · ")
+            : "";
+          const submittedParams = extractedReceipt.submittedParameters || {};
+          const verification = extractedReceipt.verification || {};
+          let receiptSignals = [];
+          try { receiptSignals = JSON.parse(claim.receiptSignalsJson || "[]"); } catch (error) { console.error("Invalid stored claim review signals:", error); }
+          const visualAssessment = verification.visualAssessment || extractedReceipt.visualAssessment || "unavailable";
+          const documentAssessment = verification.documentAssessment || extractedReceipt.documentAssessment || "unavailable";
+          const arithmeticAssessment = verification.arithmeticAssessment || extractedReceipt.arithmeticAssessment || "unavailable";
+          const authenticityLabel = documentAssessment === "not_a_receipt"
+            ? "Image does not appear to be a receipt — review required"
+            : documentAssessment === "inconclusive"
+              ? "Could not confirm this image is a receipt — review required"
+            : visualAssessment === "suspicious"
+              ? "Possible visible alteration indicators"
+              : visualAssessment === "no_obvious_tampering"
+                ? "No obvious alteration visible — not authenticated"
+                : visualAssessment === "unavailable"
+                  ? "No saved AI authenticity assessment for this claim"
+                  : "Inconclusive — image cannot be assessed confidently";
+          const submittedLines = Array.isArray(submittedParams.lineItems)
+            ? submittedParams.lineItems.map((item) => `${item.description}: ${Number(item.amount).toFixed(2)} ${submittedParams.originalCurrency || ""} (${item.kind})`).join(" · ")
+            : "";
+          const reviewFields = [
+            ["Employee ID", submittedParams.employeeId || claim.employeeId],
+            ["Merchant entered", submittedParams.merchant || claim.merchant],
+            ["Claim amount (INR)", typeof submittedParams.amountRupees === "number" ? currency.format(submittedParams.amountRupees) : currency.format(amount)],
+            ["Original amount / currency", typeof submittedParams.originalAmount === "number" ? `${submittedParams.originalAmount.toFixed(2)} ${submittedParams.originalCurrency || claim.originalCurrency}` : originalAmount === null ? "Not recorded" : `${originalAmount.toFixed(2)} ${claim.originalCurrency}`],
+            ["Category", submittedParams.category || claim.category],
+            ["Expense date", submittedParams.expenseDate || date],
+            ["Submission date", submittedDate],
+            ["Business purpose", submittedParams.purpose || claim.purpose || "Not provided"],
+            ["Client", submittedParams.clientName || claim.clientName || "Not provided"],
+            ["Attendees", submittedParams.attendees || claim.attendees || "Not provided"],
+            ["Trip reference", submittedParams.tripReference || claim.tripReference || "Not provided"],
+            ["Transaction reference", submittedParams.transactionReference || claim.transactionReference || "Not provided"],
+            ["Lost-receipt declaration", claim.lostReceiptDeclaration || "Not declared"],
+            ["Trip date", submittedParams.tripDate || (claim.tripDate ? new Date(claim.tripDate).toLocaleDateString("en-IN") : "Not provided")],
+            ["Tax / tip / discount (receipt currency)", Array.isArray(submittedParams.lineItems) ? `${Number(submittedParams.tax || 0).toFixed(2)} / ${Number(submittedParams.tip || 0).toFixed(2)} / ${Number(submittedParams.discount || 0).toFixed(2)} ${submittedParams.originalCurrency || ""}` : `${currency.format(Number(claim.taxPaise || 0) / 100)} / ${currency.format(Number(claim.tipPaise || 0) / 100)} / ${currency.format(Number(claim.discountPaise || 0) / 100)} (stored INR conversion)`],
+            ["Submitted line items", submittedLines || itemSummary || "None entered"]
+          ];
+          const reviewFieldsHtml = reviewFields.map(([label, value]) =>
+            `<div class="claim-review-field"><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`
+          ).join("");
+          const evidenceReviewHtml = claim.evidenceName
+            ? `<p>Supporting evidence: <a href="/api/claims/${Number(claim.id)}/evidence" target="_blank" rel="noopener">${escapeHtml(claim.evidenceName)}</a></p>`
+            : '<p>No alternative supporting evidence was attached.</p>';
+          const aiSignalList = [...new Set([
+            ...(Array.isArray(verification.signals) ? verification.signals : []),
+            ...(Array.isArray(extractedReceipt.documentSignals) ? extractedReceipt.documentSignals : []),
+            ...(Array.isArray(extractedReceipt.visualSignals) ? extractedReceipt.visualSignals : []),
+            ...(Array.isArray(receiptSignals) ? receiptSignals : [])
+          ].filter((signal) => typeof signal === "string" && signal.trim()))];
+          const aiSignalsHtml = aiSignalList.length
+            ? `<ul class="claim-review-warning">${aiSignalList.map((signal) => `<li>${escapeHtml(signal)}</li>`).join("")}</ul>`
+            : '<p class="claim-review-disclaimer">No specific visual signal was reported by AI.</p>';
+          const aiSummary = extractedReceipt.merchant
+            ? `${extractedReceipt.merchant} · ${Number(extractedReceipt.amount || 0).toFixed(2)} ${extractedReceipt.currency || "currency unclear"} · ${extractedReceipt.expenseDate || "date unclear"}`
+            : "No stored AI extraction";
+          const confidenceFields = [
+            ["Merchant", "merchant"],
+            ["Amount", "amount"],
+            ["Currency", "currency"],
+            ["Date", "expenseDate"],
+            ["Tax", "tax"],
+            ["Items", "lineItems"]
+          ];
+          const aiConfidenceHtml = confidenceFields.map(([label, field]) => {
+            const rawLevel = extractedReceipt.confidence?.[field];
+            const level = ["high", "medium", "low"].includes(rawLevel) ? rawLevel : "low";
+            return `<div class="claim-review-field"><dt>${label} confidence</dt><dd><span class="field-confidence" data-level="${level}">AI estimate · ${level}</span></dd></div>`;
+          }).join("");
+          const reviewDetails = `<details class="claim-review-details">
+            <summary>Open full claim review · details, evidence &amp; AI</summary>
+            <div class="claim-review-content">
+              <section><h4>Employee-entered parameters</h4><dl class="claim-review-grid">${reviewFieldsHtml}</dl>${claim.lostReceiptDeclaration ? `<p class="claim-review-warning"><strong>Lost receipt declared; manual review required.</strong> ${escapeHtml(claim.lostReceiptDeclaration)}</p>` : ""}${evidenceReviewHtml}</section>
+              <section><h4>Gemini receipt assessment</h4>
+                <p class="claim-review-warning"><strong>${escapeHtml(authenticityLabel)}</strong></p>
+                <dl class="claim-review-grid">
+                  <div class="claim-review-field"><dt>AI-extracted details</dt><dd>${escapeHtml(aiSummary)}</dd></div>
+                  ${aiConfidenceHtml}
+                  <div class="claim-review-field"><dt>AI category</dt><dd>${escapeHtml(extractedReceipt.category || "Unclear")}</dd></div>
+                  <div class="claim-review-field"><dt>AI tax / tip / discount</dt><dd>${escapeHtml(`${Number(extractedReceipt.tax || 0).toFixed(2)} / ${Number(extractedReceipt.tip || 0).toFixed(2)} / ${Number(extractedReceipt.discount || 0).toFixed(2)} ${extractedReceipt.currency || ""}`)}</dd></div>
+                  <div class="claim-review-field"><dt>Receipt arithmetic</dt><dd>${escapeHtml(arithmeticAssessment)}</dd></div>
+                  <div class="claim-review-field"><dt>AI-extracted line items</dt><dd>${escapeHtml(extractedItems || "None confidently extracted")}</dd></div>
+                </dl>
+                ${aiSignalsHtml}
+                <p class="claim-review-disclaimer">Visual AI checks and arithmetic can flag inconsistencies, but cannot prove authenticity or verify the sale. Confirm against issuer, payment, or merchant records.</p>
+              </section>
+            </div>
+          </details>`;
+          const receiptSummary = claim.receiptAssessment
+            ? `Gemini read: ${extractedReceipt.merchant || "merchant unclear"} · ${Number(extractedReceipt.amount || 0).toFixed(2)} ${extractedReceipt.currency || ""} · ${extractedReceipt.expenseDate || "date unclear"}`
+            : "";
+          const extra = [claim.purpose, claim.clientName ? `Client: ${claim.clientName}` : "", claim.attendees ? `Attendees: ${claim.attendees}` : "", claim.tripReference ? `Trip: ${claim.tripReference}` : ""].filter(Boolean).join(" · ");
+          const reimbursed = claim.reimbursedAt
+            ? `Reimbursed ${new Date(claim.reimbursedAt).toLocaleDateString("en-IN")}`
+            : `<button class="button secondary reimbursement-button" type="button" data-claim-id="${Number(claim.id)}" aria-label="Mark claim ${Number(claim.id)} reimbursed" title="Record reimbursement date">Mark paid</button>`;
+          const rowClass = claim.status === "POSSIBLE_DUPLICATE" ? "claim-duplicate"
+            : claim.status !== "COMPLIANT" ? "claim-needs-review" : "";
+          const reviewLabel = claim.status === "POSSIBLE_DUPLICATE" ? "Possible duplicate"
+            : claim.lostReceiptDeclaration ? "Lost receipt · review"
+              : claim.status !== "COMPLIANT" ? "Review required" : "Policy checks clear";
+          const warningText = claim.warning || "No policy notes.";
+          return `<tr class="${rowClass}">
+            <td><span class="claim-id">CLAIM #${Number(claim.id)}</span><span class="primary-cell">${escapeHtml(claim.employeeId)}</span><span class="secondary-cell">Expense ${escapeHtml(date)} · submitted ${escapeHtml(submittedDate)}${claim.tripDate ? ` · trip ${escapeHtml(new Date(claim.tripDate).toLocaleDateString("en-IN"))}` : ""}</span></td>
+            <td class="merchant-cell"><span class="primary-cell">${escapeHtml(claim.merchant)}</span><span class="secondary-cell">${escapeHtml(extra || "No business purpose provided")}</span></td>
+            <td class="amount-cell">${currency.format(amount)}${originalAmount !== null && claim.originalCurrency !== "INR" ? `<span class="secondary-cell">Receipt: ${escapeHtml(originalAmount.toFixed(2))} ${escapeHtml(claim.originalCurrency)} · rate ${escapeHtml(claim.exchangeRate)} on ${escapeHtml(claim.exchangeRateDate || claim.expenseDate)}</span>` : ""}</td>
+            <td class="amount-cell">${currency.format(eligibleAmount)}</td>
+            <td>${escapeHtml(String(claim.category || "").replace(/^./, (letter) => letter.toUpperCase()))}</td>
+            <td><span class="status-pill ${statusClass(claim.status)}">${statusLabel(claim.status)}</span></td>
+            <td class="reason-cell"><span class="reason-title">${escapeHtml(reviewLabel)}</span><span class="reason-preview" title="${escapeHtml(warningText)}">${escapeHtml(warningText)}</span>${claim.evidenceName ? '<span class="secondary-cell">Supporting evidence attached</span>' : ""}${reviewDetails}</td>
+            <td>${reimbursed}</td>
+          </tr>`;
+        }).join("");
+      }
+
+      async function loadClaims() {
+        const data = await apiRequest("/api/claims");
+        if (!Array.isArray(data)) throw new Error("The claims API returned an invalid response.");
+        claims = data;
+        renderClaims();
+      }
+
+      async function refreshDashboard() {
+        setBusy(true);
+        clearNotice();
+        try {
+          if (workspaceRole === "company") {
+            await Promise.all([loadClaims(), loadServiceStatus()]);
+            showNotice("Company dashboard refreshed.", "success");
+          } else if (workspaceRole === "employee") {
+            await Promise.all([loadEmployeeClaims(), loadServiceStatus()]);
+            showNotice("Your submissions were refreshed.", "success");
+          } else {
+            await loadServiceStatus();
+          }
+        } catch (error) {
+          showNotice(error.message || "Could not load claims.", "error");
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      function setFile(file) {
+        receiptHash = "";
+        perceptualHash = "";
+        clearOcrConfidence();
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        previewUrl = "";
+        updateLostReceiptFields(!file);
+        if (!file) {
+          $("#file-name").textContent = "JPG, PNG, or WebP · up to 5 MB";
+          $("#receipt-preview").style.display = "none";
+          $("#receipt-preview").removeAttribute("src");
+          $("#analyze-receipt").disabled = true;
+          return;
+        }
+        if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+          fileInput.value = "";
+          showNotice("Choose a JPG, PNG, or WebP image.", "error");
+          setFile(null);
+          return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+          fileInput.value = "";
+          showNotice("Receipt images must be 5 MB or smaller.", "error");
+          setFile(null);
+          return;
+        }
+        clearNotice();
+        $("#file-name").textContent = file.name;
+        previewUrl = URL.createObjectURL(file);
+        $("#receipt-preview").src = previewUrl;
+        $("#receipt-preview").style.display = "block";
+        $("#analyze-receipt").disabled = busy;
+      }
+
+      function updateLostReceiptFields(receiptMissing = !fileInput.files.length) {
+        const declaration = $("#lost-receipt-declared");
+        const explanation = $("#lost-receipt-declaration");
+        $("#lost-receipt-fields").hidden = !receiptMissing;
+        declaration.required = receiptMissing;
+        explanation.required = receiptMissing;
+        if (!receiptMissing) {
+          declaration.checked = false;
+          explanation.value = "";
+        }
+      }
+
+      async function calculatePerceptualHash(file) {
+        const bitmap = await createImageBitmap(file);
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = 9;
+          canvas.height = 8;
+          const context = canvas.getContext("2d", { willReadFrequently: true });
+          if (!context) throw new Error("Could not prepare the receipt image for duplicate checks.");
+          context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+          const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+          let hash = 0n;
+          for (let y = 0; y < 8; y += 1) {
+            for (let x = 0; x < 8; x += 1) {
+              const left = (y * 9 + x) * 4;
+              const right = left + 4;
+              const leftGray = pixels[left] * 0.299 + pixels[left + 1] * 0.587 + pixels[left + 2] * 0.114;
+              const rightGray = pixels[right] * 0.299 + pixels[right + 1] * 0.587 + pixels[right + 2] * 0.114;
+              hash = (hash << 1n) | BigInt(leftGray > rightGray ? 1 : 0);
+            }
+          }
+          return hash.toString(16).padStart(16, "0");
+        } finally {
+          bitmap.close();
+        }
+      }
+
+      $("#choose-file").addEventListener("click", () => fileInput.click());
+      $("#add-line-item").addEventListener("click", () => addLineItem());
+      $("#original-amount").addEventListener("change", updateExchangeQuote);
+      $("#original-currency").addEventListener("change", updateExchangeQuote);
+      $("#expense-date").addEventListener("change", updateExchangeQuote);
+      $("#category").addEventListener("change", updateTripFields);
+      form.addEventListener("input", (event) => {
+        if (!event.isTrusted) return;
+        const target = event.target;
+        const fieldById = {
+          merchant: "merchant",
+          "original-currency": "currency",
+          "original-amount": "amount",
+          category: "category",
+          "expense-date": "expenseDate",
+          tax: "tax",
+          tip: "tip",
+          discount: "discount"
+        };
+        if (target.id in fieldById) markOcrFieldEdited(fieldById[target.id]);
+        if (target.closest("#line-item-list")) markOcrFieldEdited("lineItems");
+      });
+      form.addEventListener("change", (event) => {
+        if (!event.isTrusted) return;
+        const target = event.target;
+        const fieldById = {
+          "original-currency": "currency",
+          category: "category",
+          "expense-date": "expenseDate"
+        };
+        if (target.id in fieldById) markOcrFieldEdited(fieldById[target.id]);
+        if (target.closest("#line-item-list")) markOcrFieldEdited("lineItems");
+      });
+      fileInput.addEventListener("change", () => setFile(fileInput.files[0] || null));
+      $("#analyze-receipt").addEventListener("click", async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        setBusy(true);
+        showNotice("Reading receipt with Gemini…", "info");
+        try {
+          const body = new FormData();
+          body.append("receipt", file);
+          const data = await apiRequest("/api/analyze-receipt", { method: "POST", body });
+          const extracted = data.extracted || {};
+          $("#merchant").value = extracted.merchant || "";
+          $("#original-currency").value = extracted.currency || "";
+          $("#original-amount").value = Number(extracted.amount) > 0 ? extracted.amount : "";
+          $("#tax").value = Number(extracted.tax || 0);
+          $("#tip").value = Number(extracted.tip || 0);
+          $("#discount").value = Number(extracted.discount || 0);
+          $("#category").value = ["meal", "travel", "hotel", "other"].includes(extracted.category) ? extracted.category : "other";
+          $("#category").dispatchEvent(new Event("change"));
+          $("#expense-date").value = extracted.expenseDate || "";
+          $("#line-item-list").replaceChildren();
+          const receiptItems = Array.isArray(extracted.lineItems) ? extracted.lineItems : [];
+          for (const item of receiptItems) addLineItem(item);
+          setLineItemsVisible(receiptItems.length > 0);
+          showOcrConfidence(data.confidence || extracted.confidence || {});
+          if (extracted.currency) {
+            await updateExchangeQuote();
+          } else {
+            $("#rate-note").textContent = "Receipt currency could not be identified. Select the currency printed on the receipt.";
+          }
+          receiptHash = data.receiptHash || "";
+          const verification = data.verification || {};
+          const findings = Array.isArray(verification.signals) ? verification.signals.join(" ") : "";
+          const visualLabel = verification.documentAssessment === "not_a_receipt"
+            ? "Image does not appear to be a receipt"
+            : verification.documentAssessment === "inconclusive"
+              ? "Could not confirm this image is a receipt"
+            : verification.visualAssessment === "suspicious"
+            ? "Visual anomalies flagged"
+            : verification.visualAssessment === "no_obvious_tampering"
+              ? "No obvious visual anomalies detected"
+              : "Visual assessment inconclusive";
+          const arithmeticLabel = verification.arithmeticAssessment === "consistent"
+            ? "Receipt arithmetic reconciles"
+            : verification.arithmeticAssessment === "mismatch"
+              ? "Receipt arithmetic mismatch"
+              : "Receipt arithmetic inconclusive";
+          const missingDetails = [
+            !extracted.merchant && "merchant",
+            !(Number(extracted.amount) > 0) && "total amount",
+            !extracted.currency && "currency",
+            !extracted.expenseDate && "transaction date"
+          ].filter(Boolean);
+          const incompleteMessage = missingDetails.length
+            ? ` Gemini could not confidently read: ${missingDetails.join(", ")}. Enter those details from the receipt before submitting.`
+            : "";
+          const itemMessage = !(Array.isArray(extracted.lineItems) && extracted.lineItems.length)
+            ? " No itemized lines were extracted, so you may need to add the purchased items for eligibility checks."
+            : "";
+          showNotice(`Receipt processed. ${visualLabel}; ${arithmeticLabel}.${incompleteMessage}${itemMessage}${findings ? ` ${findings}` : ""} Verify all extracted values. ${verification.disclaimer || "AI image analysis cannot prove authenticity or confirm a purchase with the merchant."}`, verification.visualAssessment === "suspicious" || verification.arithmeticAssessment === "mismatch" ? "error" : "info");
+        } catch (error) {
+          showNotice(error.message || "Could not read this receipt. You can enter the details manually.", "error");
+        } finally {
+          setBusy(false);
+        }
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!form.reportValidity()) return;
+        if (fileInput.files.length && !receiptHash) {
+          showNotice("Read the selected receipt with AI before submitting, or remove it and complete the lost-receipt declaration.", "error");
+          return;
+        }
+        setBusy(true);
+        showNotice("Checking policy and saving claim…", "info");
+        const formData = new FormData(form);
+        try {
+          if (fileInput.files[0]) {
+            perceptualHash = await calculatePerceptualHash(fileInput.files[0]);
+          }
+          let evidence = null;
+          const evidenceFile = $("#supporting-evidence").files[0];
+          if (evidenceFile) {
+            const evidenceForm = new FormData();
+            evidenceForm.append("evidence", evidenceFile);
+            evidence = await apiRequest("/api/evidence-upload", {
+              method: "POST",
+              body: evidenceForm
+            });
+          }
+          const claim = await apiRequest("/api/claims", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              employeeId: formData.get("employeeId"),
+              merchant: formData.get("merchant"),
+              amountRupees: Number(formData.get("amountRupees")),
+              category: formData.get("category"),
+              expenseDate: formData.get("expenseDate"),
+              purpose: formData.get("purpose"),
+              clientName: formData.get("clientName"),
+              attendees: formData.get("attendees"),
+              tripReference: formData.get("tripReference"),
+              transactionReference: formData.get("transactionReference"),
+              tripDate: formData.get("tripDate"),
+              lostReceiptDeclared: !receiptHash && $("#lost-receipt-declared").checked,
+              lostReceiptDeclaration: !receiptHash ? $("#lost-receipt-declaration").value : "",
+              evidenceId: evidence?.evidenceId || "",
+              evidenceName: evidence?.evidenceName || "",
+              evidenceMimeType: evidence?.evidenceMimeType || "",
+              perceptualHash,
+              originalAmount: Number(formData.get("originalAmount")),
+              originalCurrency: formData.get("originalCurrency"),
+              tax: Number(formData.get("tax")),
+              tip: Number(formData.get("tip")),
+              discount: Number(formData.get("discount")),
+              lineItems: getLineItems(),
+              receiptHash
+            })
+          });
+          const eligible = Number(claim.eligiblePaise ?? 0) / 100;
+          showNotice(`${statusLabel(claim.status)}: ${claim.warning || "No policy notes."}\nEligible amount: ${currency.format(eligible)}`, claim.status === "COMPLIANT" ? "success" : "info");
+          $("#merchant").value = "";
+          $("#amount").value = "";
+          $("#purpose").value = "";
+          $("#client-name").value = "";
+          $("#attendees").value = "";
+          $("#trip-reference").value = "";
+          $("#transaction-reference").value = "";
+          $("#trip-date").value = "";
+          $("#original-amount").value = "";
+          $("#tax").value = "0";
+          $("#tip").value = "0";
+          $("#discount").value = "0";
+          $("#line-item-list").replaceChildren();
+          setLineItemsVisible(false);
+          $("#original-currency").value = "INR";
+          $("#rate-note").textContent = "INR claims use the receipt amount directly.";
+          receiptHash = "";
+          perceptualHash = "";
+          fileInput.value = "";
+          $("#supporting-evidence").value = "";
+          setFile(null);
+          try {
+            await loadEmployeeClaims();
+          } catch (refreshError) {
+            showNotice(`Claim saved successfully, but your submissions could not refresh: ${refreshError.message}`, "error");
+          }
+        } catch (error) {
+          showNotice(error.message || "Could not save the claim.", "error");
+        } finally {
+          setBusy(false);
+        }
+      });
+
+      form.addEventListener("reset", () => {
+        window.setTimeout(() => {
+          $("#employee-id").value = "EMP101";
+          $("#expense-date").value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+          $("#category").dispatchEvent(new Event("change"));
+          $("#original-currency").value = "INR";
+          $("#original-amount").value = "";
+          $("#tax").value = "0";
+          $("#tip").value = "0";
+          $("#discount").value = "0";
+          $("#line-item-list").replaceChildren();
+          setLineItemsVisible(false);
+          $("#rate-note").textContent = "INR claims use the receipt amount directly.";
+          fileInput.value = "";
+          receiptHash = "";
+          perceptualHash = "";
+          $("#supporting-evidence").value = "";
+          setFile(null);
+        });
+      });
+      $("#search-claims").addEventListener("input", renderClaims);
+      $("#filter-status").addEventListener("change", renderClaims);
+      $("#sort-claims").addEventListener("change", renderClaims);
+      $("#clear-filters").addEventListener("click", () => {
+        $("#search-claims").value = "";
+        $("#filter-status").value = "";
+        $("#sort-claims").value = "priority";
+        renderClaims();
+        $("#search-claims").focus();
+      });
+      $("#choose-employee").addEventListener("click", () => selectWorkspace("employee"));
+      $("#choose-company").addEventListener("click", () => selectWorkspace("company"));
+      $("#employee-nav").addEventListener("click", () => selectWorkspace("employee"));
+      $("#company-nav").addEventListener("click", () => selectWorkspace("company"));
+      $("#home-nav").addEventListener("click", () => {
+        workspaceRole = "";
+        $("#workspace").hidden = true;
+        $("#role-nav").hidden = true;
+        $("#role-picker").hidden = false;
+      });
+      $("#employee-id").addEventListener("change", () => {
+        if (workspaceRole === "employee") {
+          loadEmployeeClaims().catch((error) => showNotice(error.message || "Could not load submissions.", "error"));
+        }
+      });
+      window.setInterval(() => {
+        if (workspaceRole === "employee" && !document.hidden) {
+          loadEmployeeClaims().catch((error) => console.error("Could not refresh employee submissions:", error));
+        }
+      }, 15000);
+      document.addEventListener("visibilitychange", () => {
+        if (workspaceRole === "employee" && !document.hidden) {
+          loadEmployeeClaims().catch((error) => showNotice(error.message || "Could not refresh submissions.", "error"));
+        }
+      });
+      claimsBody.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-claim-id]");
+        if (!button) return;
+        button.disabled = true;
+        try {
+          await apiRequest(`/api/claims/${button.dataset.claimId}/reimbursement`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reimbursedAt: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10) })
+          });
+          await loadClaims();
+        } catch (error) {
+          button.disabled = false;
+          showNotice(error.message || "Could not save reimbursement date.", "error");
+        }
+      });
+      $("#refresh-claims").addEventListener("click", refreshDashboard);
+      $("#refresh-top").addEventListener("click", refreshDashboard);
+      $("#expense-date").value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+      updateTripFields();
+      addLineItem();
+      updateLostReceiptFields();
+      loadServiceStatus().catch((error) => console.error("Could not load service status:", error));
+    })();
+  </script>
+</body>
+</html>
