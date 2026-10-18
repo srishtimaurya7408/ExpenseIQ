@@ -1027,7 +1027,7 @@ app.use(requestErrorHandler);
 
 async function main() {
   prisma = await startDatabase();
-  server = app.listen(PORT);
+  server = app.listen(PORT, "0.0.0.0");
   await new Promise<void>((resolve, reject) => {
     server?.once("listening", resolve);
     server?.once("error", reject);

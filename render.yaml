@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: expenseiq
+    runtime: node
+    plan: starter
+    region: singapore
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/status
+    disk:
+      name: expenseiq-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: EMBEDDED_POSTGRES_PASSWORD
+        generateValue: true
